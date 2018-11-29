@@ -15,16 +15,80 @@ exit_hook() {
 }
 trap exit_hook INT TERM
 
-# How many backups to keep.
+# How many backups to keep (defaults).
 RETENTION_DAYS=14
 RETENTION_WEEKS=16
 RETENTION_MONTHS=18
 RETENTION_YEARS=3
 
 # What to backup, and what to not
-BACKUP_PATHS="/ /boot /home /mnt/media"
-BACKUP_EXCLUDES="--exclude-file /.backup_exclude --exclude-file /mnt/media/.backup_exclude --exclude-file /home/erikw/.backup_exclude"
+#BACKUP_EXCLUDES="--exclude-file /.backup_exclude --exclude-file /mnt/media/.backup_exclude --exclude-file /home/erikw/.backup_exclude"
 BACKUP_TAG=systemd.timer
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -rd|--retain-daily)
+    RETENTION_DAYS="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -rw|--retain-weekly)
+    RETENTION_WEEKLY="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -rm|--retain-monthly)
+    RETENTION_MONTHLY="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -ry|--retain-yearly)
+    RETENTION_YEARLY="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -r|--repository)
+    RESTIC_REPOSITORY="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -x|--excludes)
+    BACKUP_EXCLUDES="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -t|--tag)
+    BACKUP_TAG="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    --prune)
+    PRUNE=YES
+    shift # past argument
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [[ -n $@ ]]; then
+    BACKUP_PATHS="$@"
+    echo "Starting backup for $BACKUP_PATHS"
+fi
+
+if [[ -z "$BACKUP_PATHS" ]]; then
+  echo "parameters missing"
+  echo "usage: restic_backup.sh -b --tag TAG --prune --retain-daily 14 --retain-weekly 16 --retain-monthly 18 --retain-yearly 2 BACKUP_PATH"
+  exit 1
+fi
+
 
 
 # Set all environment variables like
@@ -71,10 +135,13 @@ wait $!
 
 # Remove old data not linked anymore.
 # See restic-prune(1) or http://restic.readthedocs.io/en/latest/060_forget.html
-restic prune \
-	--option b2.connections=$B2_CONNECTIONS \
-	--verbose &
-wait $!
+
+if [[ -n "$PRUNE" ]]; then
+	restic prune \
+		--option b2.connections=$B2_CONNECTIONS \
+		--verbose &
+	wait $!
+fi
 
 # Check repository for errors.
 # NOTE this takes much time (and data transfer from remote repo?), do this in a separate systemd.timer which is run less often.
