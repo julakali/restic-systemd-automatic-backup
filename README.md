@@ -1,5 +1,7 @@
 # Automatic restic backups using systemd services and timers
 
+This is a fork of erikw/restic-systemd-automatic-backup, changing the backups script to take parameters so it can be used for multiple backup jobs (e.g. daily/weekly).
+
 ## Restic
 
 [restic](https://restic.net/) is a command-line tool for making backups, the right way. Check the official website for a feature explanation. As a storage backend, I recommend [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html) as restic works well with it, and it is (at the time of writing) very affordable for the hobbyist hacker!
