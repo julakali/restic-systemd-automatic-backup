@@ -23,6 +23,7 @@ RETENTION_YEARS=3
 
 # What to backup, and what to not
 #BACKUP_EXCLUDES="--exclude-file /.backup_exclude --exclude-file /mnt/media/.backup_exclude --exclude-file /home/erikw/.backup_exclude"
+#BACKUP_EXCLUDES="--exclude .snapshots"
 BACKUP_TAG=systemd.timer
 
 POSITIONAL=()
@@ -56,8 +57,8 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-    -x|--excludes)
-    BACKUP_EXCLUDES="$2"
+    -x|--exclude)
+    BACKUP_EXCLUDES="$BACKUP_EXCLUDES --exclude $2"
     shift # past argument
     shift # past value
     ;;
@@ -85,7 +86,7 @@ fi
 
 if [[ -z "$BACKUP_PATHS" ]]; then
   echo "parameters missing"
-  echo "usage: restic_backup.sh -b --tag TAG --prune --retain-daily 14 --retain-weekly 16 --retain-monthly 18 --retain-yearly 2 BACKUP_PATH"
+  echo "usage: restic_backup.sh -b --tag <TAG> --exclude <PATTERN> --prune --retain-daily <NUMBER> --retain-weekly <NUMBER> --retain-monthly <NUMBER> --retain-yearly <NUMBER> BACKUP_PATH"
   exit 1
 fi
 
